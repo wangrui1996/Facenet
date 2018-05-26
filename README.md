@@ -46,7 +46,8 @@ FaceNet网路可以参考具体的论文["FaceNet: A Unified Embedding for Face 
 
 首先我们需要在[data/config/camera.txt](https://github.com/wangrui1996/facerecognitionRaspberry/blob/master/data/config/camera.txt)文件中配置摄像头以及对应的名称。
 
-|---Label---|---Path---|
+| Label | Path |
+|-------|-------------------|
 | 相机   |   ./cera/2.mp4 |
 |   f   |    0   |
 
@@ -90,7 +91,8 @@ python3 main.py
 '''
 python3 main.py --mode 3
 '''
-然后选择在命令行中输入1.从摄像头中获取人脸图片，2.从视频中获取人脸图片，3.讲[data/facedir](https://github.com/wangrui1996/facerecognitionRaspberry/blob/master/data/facedir)文件夹下的图片转换到人脸数据库中。
+然后选择在命令行中输入1.从摄像头中获取人脸图片，2.从视频中获取人脸图片，3.将[data/facedir](https://github.com/wangrui1996/facerecognitionRaspberry/blob/master/data/facedir)文件夹下的图片转换到人脸数据库[data/middle](https://github.com/wangrui1996/facerecognitionRaspberry/blob/master/data/middle)中。
+<br>
 - 如果选择 1:
 则讲会从摄像头获取的人脸图片存储到[data/videoout](https://github.com/wangrui1996/facerecognitionRaspberry/blob/master/data/videoout)中,你需要在[data/middle](https://github.com/wangrui1996/facerecognitionRaspberry/blob/master/data/middle)创建相应的人脸文件夹，并且将videoout人脸图片放入middle文件夹中，因为数据库人脸读取是读取middle中的人脸图片进行对比。
 - 如果选择 2:
