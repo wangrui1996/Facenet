@@ -55,13 +55,14 @@ FaceNet网路可以参考具体的论文["FaceNet: A Unified Embedding for Face 
 <br>
 <br>
 
-###欧氏距离进行分类
+欧氏距离进行分类
 
 
 
 <br>
 
 命令行输入:  (默认通过欧氏距离分类)
+
 '''
 python3 main.py 
 '''
@@ -69,7 +70,7 @@ python3 main.py
 <br>
 <br>
 
-###通过SVM进行分类:
+通过SVM进行分类:
 
 
 
@@ -78,19 +79,22 @@ python3 main.py
 '''
 命令行输入 python3 main.py --mode 1 
 '''
+
 <br>
 <br>
 
-##像人脸数据库中添加人脸
+像人脸数据库中添加人脸
 
 ---------------
 
 <br>
 
 命令行运行:
+
 '''
 python3 main.py --mode 3
 '''
+
 然后选择在命令行中输入1.从摄像头中获取人脸图片，2.从视频中获取人脸图片，3.将[data/facedir](https://github.com/wangrui1996/facerecognitionRaspberry/blob/master/data/facedir)文件夹下的图片转换到人脸数据库[data/middle](https://github.com/wangrui1996/facerecognitionRaspberry/blob/master/data/middle)中。
 <br>
 - 如果选择 1:
@@ -103,13 +107,14 @@ python3 main.py --mode 3
 <br>
 <br>
 
-###通过svm进行训练
+通过svm进行训练
 
 
 
 <br>
 
 我们需要通过前一步骤也就是通过添加数据库中的人脸放进data/middle中，然后命令行输入:
+
 '''
 python3 main.py --mode 2
 '''
