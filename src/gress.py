@@ -104,10 +104,10 @@ def reg_face(frame, detect, classifier, client, cera, mode):
 
 
 
-def progress(port, mode):
+def progress(port, mode, record):
 #    print(cap)
 
-    cameList, number = CameraList()     # set the input, from camera or Video
+    cameList, number = CameraList(record=record)     # set the input, from camera or Video
 
     with tf.Graph().as_default():
         gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.2)
@@ -121,10 +121,15 @@ def progress(port, mode):
     client = Client(port)         # if we need send data by UDP, set it.
     while True:
         for cam in cameList:              # from camera get frame and progress it in detect and recognition face
-            _, frame = cam.capFrame()     # get face from class camera
+            ret, frame = cam.capFrame()     # get face from class camera
+            if not ret:
+                cam.release()
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)   # BGR into RGB
             res = reg_face(frame, detect, classifier, client, cam, mode)  # main progress
             res = cv2.cvtColor(res, cv2.COLOR_RGB2BGR)    # RGB into BGR
+            if record:
+                cam.writeFrame(res)
+
             cv2.imshow(cam.getLabel(), res)    # show result
             cv2.waitKey(1)
 #            ret, frame = cap.read()

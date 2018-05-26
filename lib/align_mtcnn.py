@@ -35,6 +35,7 @@ class FaceDetect:
         return faceBound, point
 
     def translateface(self, input=__input, output=__out):
+        criter = 249
         dataset = facenet.get_dataset(input)
         for cls in dataset:
             assert (len(cls.image_paths)>0, 'There must be at least one image for each class in the dataset')
@@ -46,17 +47,24 @@ class FaceDetect:
             return 0
         for i in range(len(paths)):
             path = paths[i]
-            img = misc.imread(path)
-            misc.imshow(img)
+            img = cv2.imread(path)
+            w, h, d = img.shape
+            if w > criter:
+                img = cv2.resize(img, (int(h*criter/w), criter))
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+#            cv2.imshow("input", cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
+#            cv2.waitKey(0)
 
             box,_ = detect_face.detect_face(img, self.__minsize, self.__pnet, self.__rnet, self.__onet, self.__threshold, self.__factor)
             det = box[:, 0:4]
+            img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
             for j in range(np.shape(box)[0]):
                 res = img[int(det[j][1]):int(det[j][3]), int(det[j][0]):int(det[j][2])]
-                misc.imshow(res)
+#                cv2.imshow("result",res)
+#                cv2.waitKey(0)
                 savepath = os.path.join(output + "/" + labels[i], path.split('/')[-1])
                 #print(savepath)
-                misc.imsave(savepath, res)
+                cv2.imwrite(savepath, res)
 
     def translatevideo(self, cap, videoout=__videoout):
         print("output dir is {}".format(videoout))
