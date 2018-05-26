@@ -51,6 +51,6 @@ python3 main.py --mode 2
 
 训练后的文件放入了[data/model/svm/model](https://github.com/wangrui1996/facerecognitionRaspberry/blob/master/data/model/svm/model)中
 
-![Balloon Color Splash](data/result/record/f.)
+![Balloon Color Splash](data/result/record/f.gif)
 
 ![Crates.io](https://img.shields.io/crates/l/rustc-serialize.svg)
