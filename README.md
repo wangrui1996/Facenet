@@ -1,5 +1,5 @@
 
-![王锐](https://img.shields.io/wercker/ci/wercker/docs.svg)
+![wangrui](https://img.shields.io/wercker/ci/wercker/docs.svg)
 
 # 树莓派上移植FaceNet(PC机上也可运行)
 
@@ -56,7 +56,7 @@ FaceNet网路可以参考具体的论文["FaceNet: A Unified Embedding for Face 
 
 ###欧氏距离进行分类
 
------------------
+
 
 <br>
 
@@ -70,7 +70,7 @@ python3 main.py
 
 ###通过SVM进行分类:
 
---------------------
+
 
 <br>
 
@@ -103,7 +103,7 @@ python3 main.py --mode 3
 
 ###通过svm进行训练
 
-------------------
+
 
 <br>
 
