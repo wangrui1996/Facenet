@@ -1,2 +1,0 @@
-相机 ./cera/2.mp4
-f ./cera/5.mp4
