@@ -17,11 +17,16 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "util/bbox_util.hpp"
 
 using namespace caffe;
 using namespace std;
 
+
+
 enum NetType{Pnet, Rnet, Onet};
+
+typedef vector<pair<Rect2f, float> > Rectangle;
 
 class Mtcnn {
  public:
@@ -29,7 +34,7 @@ class Mtcnn {
              const vector<string>& trained_file);
 
   void Classify(const cv::Mat& img);
-  void Detection(const cv::Mat &img);
+  Rectangle Detection(const cv::Mat &img);
 
  private:
   void SetMean(const string& mean_file);
@@ -38,7 +43,7 @@ class Mtcnn {
 
   void Predict(const vector<cv::Mat> imgs, NetType netType);
 
-  vector<cv::Rect> Pnet(int origin_w, int origin_h, float scale);
+  BoundingBox Pnet(int origin_w, int origin_h, float scale);
 
   void Preprocess(const vector<cv::Mat>& img);
 

@@ -4,7 +4,9 @@
 
 #include "Mtcnn.hpp"
 
-vector<float> calculateScales(int width, intt height) {
+
+
+vector<float> calculateScales(int width, int height) {
   vector<float> scales;
   float pr_scale = 1.0;
   if (width > 1000 || height > 1000)
@@ -154,20 +156,27 @@ void Mtcnn::Preprocess(const vector<cv::Mat>& img) {
   }
 }
 
-void Mtcnn::Detection(const cv::Mat &img) {
+Rectangle Mtcnn::Detection(const cv::Mat &img) {
+  Rectangle rectanbox;
   int origin_h = img.rows;
   int origin_w = img.cols;
   vector<float> scales = calculateScales(origin_w, origin_h);
-
+  BoundingBox boundingboxs;
   for (auto scale = scales.begin(); scale != scales.end(); ++scale) {
     cv::Mat resize_img;
     cv::resize(img, resize_img, cv::Size(int(*scale * origin_w), int(*scale * origin_h)));
     Predict(resize_img, NetType::Pnet);
-
+    BoundingBox boundingbox = Pnet(origin_w, origin_h, 1 / *scale);
+    boundingboxs.insert(boundingbox.end(), boundingbox.begin(), boundingbox.end());
   }
+
+  ApplyNMSFast(boundingboxs, 0.7);
+  if (boundingboxs.empty())
+    return rectanbox;
+
 }
 
-vector<cv::Rect> Mtcnn::Pnet(int origin_w, int origin_h, float scale) {
+BoundingBox Mtcnn::Pnet(int origin_w, int origin_h, float scale) {
 
   const float *cls_data = Pnet_cls_->cpu_data();
   const float *roi_data = Pnet_roi_->cpu_data();
@@ -180,7 +189,7 @@ vector<cv::Rect> Mtcnn::Pnet(int origin_w, int origin_h, float scale) {
   if (out_side != 1) {
     stride = float(in_side-12) / (out_side - 1);
   }
-
+  BoundingBox boundingbox;
   for (int h = 0; h < out_h; ++h) {
     for (int w = 0; w < out_w; ++w) {
       float score = *(cls_data++);
@@ -196,11 +205,12 @@ vector<cv::Rect> Mtcnn::Pnet(int origin_w, int origin_h, float scale) {
         int x2 = int(round(min(float(origin_w),   float(original_x2 + original_w * *(roi_data+Pnet_roi_->offset(0,2,h,w))))));
         int y2 = int(round(min(float(origin_h),   float(original_y2 + original_h * *(roi_data+Pnet_roi_->offset(0,3,h,w))))));
         if (x2 > x1 && y2 > y1){
-
+          pair<cv::Rect, float> box;
+          box.first = cv::Rect(x1, y1, x2-x1, y2-y1);
+          box.second = score;
+          boundingbox.push_back(box);
         }
       }
-
-
     }
   }
 }
