@@ -1,3 +1,0 @@
-/home/rui/repos/Facenet/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-/home/rui/repos/Facenet/cmake-build-debug/CMakeFiles/Demo.dir
-/home/rui/repos/Facenet/cmake-build-debug/CMakeFiles/edit_cache.dir
