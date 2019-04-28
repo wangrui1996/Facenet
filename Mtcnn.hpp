@@ -45,7 +45,7 @@ class Mtcnn {
 
   BoundingBox Pnet(int origin_w, int origin_h, float scale);
 
-  void Preprocess(const vector<cv::Mat>& img);
+  void Preprocess(const vector<cv::Mat>& img, std::vector<cv::Mat> *input_channels);
 
 
  private:
@@ -53,7 +53,7 @@ class Mtcnn {
   boost::shared_ptr<Net<float> > Rnet_;
   boost::shared_ptr<Net<float> > Onet_;
   vector<float> thresholds_;
-  vector<cv::Size> input_geometrys_[3];
+  vector<cv::Size> input_geometrys_;
   int num_channels_;
   boost::shared_ptr<Blob<float> > Pnet_cls_;
   boost::shared_ptr<Blob<float> > Pnet_roi_;
