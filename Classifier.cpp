@@ -1,7 +1,3 @@
-//
-// Created by rui on 19-3-31.
-//
-
 #include "Classifier.hpp"
 Classifier::Classifier(const string& model_file,
                        const string& trained_file,
@@ -19,7 +15,7 @@ Classifier::Classifier(const string& model_file,
   net_->CopyTrainedLayersFrom(trained_file);
 
   CHECK_EQ(net_->num_inputs(), 1) << "Network should have exactly one input.";
-  CHECK_EQ(net_->num_outputs(), 1) << "Network should have exactly one output.";
+  CHECK_EQ(net_->num_outputs(), 2) << "Network should have exactly one output.";
 
   Blob<float>* input_layer = net_->input_blobs()[0];
   num_channels_ = input_layer->channels();
@@ -33,13 +29,16 @@ Classifier::Classifier(const string& model_file,
   /* Load labels. */
   std::ifstream labels(label_file.c_str());
   CHECK(labels) << "Unable to open labels file " << label_file;
-  string line;
-  while (std::getline(labels, line))
-    labels_.push_back(string(line));
 
-  Blob<float>* output_layer = net_->output_blobs()[0];
-  CHECK_EQ(labels_.size(), output_layer->channels())
-    << "Number of labels is different from the output layer dimension.";
+//  Blob<float>* output_layer = net_->output_blobs()[0];
+//  CHECK_EQ(labels_.size(), output_layer->channels())
+//    << "Number of labels is different from the output layer dimension.";
+}
+
+
+void Classifier::SetOutputBlob(std::vector<string> blob_name) {
+  cls_prob_ = net_->blob_by_name(blob_name[0]);
+  roi_ = net_->blob_by_name(blob_name[1]);
 }
 
 static bool PairCompare(const std::pair<float, int>& lhs,
@@ -61,21 +60,6 @@ static std::vector<int> Argmax(const std::vector<float>& v, int N) {
   return result;
 }
 
-/* Return the top N predictions. */
-std::vector<Prediction> Classifier::Classify(const cv::Mat& img, int N) {
-  std::vector<float> output = Predict(img);
-
-
-  N = std::min<int>(labels_.size(), N);
-  std::vector<int> maxN = Argmax(output, N);
-  std::vector<Prediction> predictions;
-  for (int i = 0; i < N; ++i) {
-    int idx = maxN[i];
-    predictions.push_back(std::make_pair(labels_[idx], output[idx]));
-  }
-
-  return predictions;
-}
 
 /* Load the mean file in binaryproto format. */
 void Classifier::SetMean(const string& mean_file) {
@@ -108,7 +92,7 @@ void Classifier::SetMean(const string& mean_file) {
   mean_ = cv::Mat(input_geometry_, mean.type(), channel_mean);
 }
 
-std::vector<float> Classifier::Predict(const cv::Mat& img) {
+void Classifier::Predict(const cv::Mat& img) {
   Blob<float>* input_layer = net_->input_blobs()[0];
 
   input_layer->Reshape(1, num_channels_,
@@ -120,15 +104,8 @@ std::vector<float> Classifier::Predict(const cv::Mat& img) {
   WrapInputLayer(&input_channels);
 
   Preprocess(img, &input_channels);
-  std::cout << "input data12: " << *(input_layer->cpu_data() + 6911) << std::endl;
-  std::cout << "input data12: " << input_layer->shape()[3] << std::endl;
   net_->Forward();
 
-  /* Copy the output layer to a std::vector */
-  Blob<float>* output_layer = net_->output_blobs()[0];
-  const float* begin = output_layer->cpu_data();
-  const float* end = begin + output_layer->channels();
-  return std::vector<float>(begin, end);
 }
 
 /* Wrap the input layer of the network in separate cv::Mat objects
