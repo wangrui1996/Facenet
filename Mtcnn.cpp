@@ -20,7 +20,7 @@ vector<float> calculateScales(int width, int height) {
   int minsize = min(wd, hg);
   while (minsize >= 12) {
     scales.push_back(pr_scale*pow(factor, factor_count));
-    minsize *= factor;
+    minsize = floor(factor*minsize);
     factor_count += 1;
   }
   return scales;
@@ -58,6 +58,9 @@ Mtcnn::Mtcnn(const vector<string> &model_file, const vector<string> &trained_fil
   input_geometrys_.push_back(cv::Size(Rnet_->input_blobs()[0]->width(), Rnet_->input_blobs()[0]->height()));
   input_geometrys_.push_back(cv::Size(Onet_->input_blobs()[0]->width(), Onet_->input_blobs()[0]->height()));
 
+  thresholds_.push_back(0.5);
+  thresholds_.push_back(0.7);
+  thresholds_.push_back(0.8);
 
 
 }
@@ -65,15 +68,15 @@ Mtcnn::Mtcnn(const vector<string> &model_file, const vector<string> &trained_fil
 void Mtcnn::Predict(const cv::Mat& img, NetType netType) {
   switch (netType) {
     case NetType::Pnet:
-      net_.reset(Pnet_.get());
-      input_geometry_ = input_geometrys_[0];
+      net_ = Pnet_;
+      input_geometry_ = cv::Size(img.cols, img.rows);
       break;
     case NetType::Rnet:
-      net_.reset(Rnet_.get());
+      net_ = Rnet_;
       input_geometry_ = input_geometrys_[1];
       break;
     case NetType::Onet:
-      net_.reset(Onet_.get());
+      net_ = Onet_;
       input_geometry_ = input_geometrys_[2];
       break;
     default:
@@ -85,12 +88,13 @@ void Mtcnn::Predict(const cv::Mat& img, NetType netType) {
 
   Blob<float>* input_layer = net_->input_blobs()[0];
   input_layer->Reshape(1, 3,
-                       input_geometry_.height, input_geometry_.width);
+                       input_geometry_.width, input_geometry_.height);
   net_->Reshape();
   vector<cv::Mat> images;
   images.push_back(img);
   vector<Mat> input_channels;
   Preprocess(images, &input_channels);
+  net_->Forward();
 }
 
 void Mtcnn::Predict(const vector<cv::Mat> imgs, NetType netType) {
@@ -113,6 +117,7 @@ void Mtcnn::Predict(const vector<cv::Mat> imgs, NetType netType) {
       break;
   }
 
+
   Blob<float>* input_layer = net_->input_blobs()[0];
   input_layer->Reshape(1, 3,
                        input_geometry_.height, input_geometry_.width);
@@ -128,10 +133,11 @@ void Mtcnn::Preprocess(const vector<cv::Mat>& img, std::vector<cv::Mat> *input_c
   Blob<float>* input_layer = net_->input_blobs()[0];
   int width = input_geometry_.width;
   int height = input_geometry_.height;
+  std::cout << input_geometry_ << std::endl;
   float* input_data = input_layer->mutable_cpu_data();
   for (int img_idx = 0; img_idx < img.size(); ++img_idx) {
     for (int cha_idx = 0; cha_idx < input_layer->channels(); ++cha_idx) {
-      cv::Mat channel(height, width, CV_32FC1, input_data);
+      cv::Mat channel(width, height, CV_32FC1, input_data);
       input_channels->push_back(channel);
       input_data += width * height;
     }
@@ -139,20 +145,16 @@ void Mtcnn::Preprocess(const vector<cv::Mat>& img, std::vector<cv::Mat> *input_c
     /* Convert the input image to the input image format of the network. */
     cv::Mat sample_resized;
     cv::resize(img[img_idx], sample_resized, input_geometry_);
-
     cv::Mat sample_float;
-    std::cout << float(sample_resized.data[0]) << std::endl;
     sample_resized.convertTo(sample_float, CV_32FC3);
-    cv::imshow("demo", sample_resized);
-    cv::waitKey(0);
-    std::cout << float(sample_float.data[0]) << std::endl;
+    sample_float = sample_float - 127.5;
+    sample_float = sample_float / 128;
+    cv::transpose(sample_float, sample_float);
     cv::split(sample_float, *input_channels);
     /* This operation will write the separate BGR planes directly to the
      * input layer of the network because it is wrapped by the cv::Mat
      * objects in input_channels. */
-    std::cout << float(sample_float.data[0]) << std::endl;
-    std::cout << *(net_->input_blobs()[0]->cpu_data()) << std::endl;
-    CHECK(reinterpret_cast<float*>(input_channels->at(0).data) == net_->input_blobs()[0]->cpu_data())
+    CHECK(reinterpret_cast<float*>(input_channels->at(0).data) == net_->input_blobs()[0]->cpu_data() + net_->input_blobs()[0]->offset(img_idx))
     << "Input channels are not wrapping the input layer of the network.";
   }
 }
@@ -165,10 +167,16 @@ Rectangle Mtcnn::Detection(const cv::Mat &img) {
   BoundingBox boundingboxs;
   for (auto scale = scales.begin(); scale != scales.end(); ++scale) {
     cv::Mat resize_img;
-    cv::resize(img, resize_img, cv::Size(int(*scale * origin_w), int(*scale * origin_h)));
+    cv::resize(img.clone(), resize_img, cv::Size(int(*scale * origin_w), int(*scale * origin_h)));
     Predict(resize_img, NetType::Pnet);
     BoundingBox boundingbox = Pnet(origin_w, origin_h, 1 / *scale);
-    boundingboxs.insert(boundingbox.end(), boundingbox.begin(), boundingbox.end());
+    boundingboxs.insert(boundingboxs.end(), boundingbox.begin(), boundingbox.end());
+    std::cout << "bound size: " << boundingboxs.size() << std::endl;
+  }
+  for (int i = 0 ;  i < boundingboxs.size(); ++i) {
+    cv::Mat show = img(boundingboxs[i].first);
+    cv::imshow("ddd", show);
+    cv::waitKey(0);
   }
 
   ApplyNMSFast(boundingboxs, 0.7);
@@ -182,6 +190,7 @@ BoundingBox Mtcnn::Pnet(int origin_w, int origin_h, float scale) {
   const float *cls_data = Pnet_cls_->cpu_data();
   const float *roi_data = Pnet_roi_->cpu_data();
   cls_data = cls_data + Pnet_cls_->offset(0, 1);
+
   const int out_w = Pnet_cls_->width();
   const int out_h = Pnet_cls_->height();
   const int out_side = max(out_w, out_h);
@@ -195,6 +204,7 @@ BoundingBox Mtcnn::Pnet(int origin_w, int origin_h, float scale) {
     for (int w = 0; w < out_w; ++w) {
       float score = *(cls_data++);
       if (score > thresholds_[0]) {
+        std::cout << score << std::endl;
         int original_x1 = int((stride*w+1)*scale);
         int original_y1 = int((stride*h+1)*scale);
         int original_w = int((12.0-1)*scale);
@@ -214,4 +224,6 @@ BoundingBox Mtcnn::Pnet(int origin_w, int origin_h, float scale) {
       }
     }
   }
+
+  return boundingbox;
 }

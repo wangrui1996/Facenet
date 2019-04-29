@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.1)
 project(main)
 #add_definitions(-DCPU_ONLY)
-
+ADD_DEFINITIONS(-DDEBUG)
 set(CMAKE_CXX_STANDARD 14)
 #set(ProjectPath ${PROJECT_SOURCE_DIR})
 set(OpenCV_DIR "/home/rui/libs/opencv-3.4/opencv-3.4/build")
