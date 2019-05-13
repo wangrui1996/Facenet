@@ -31,7 +31,7 @@ class Camera:
     __interval = 120
     __delay = 0
     __record_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data/result/record')
-    def __init__(self, label, path, record):
+    def __init__(self, label, path, record, cap_max_size=700):
         try:
             path = int(path)
             print("open video from camra")
@@ -52,13 +52,23 @@ class Camera:
         self.__cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         self.__label = label
         self.__savePath = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'output/' + self.getLabel())
+        h,w,_=self.__cap.read()[1].shape
+        self.__resize = False
+        if max(h, w) >cap_max_size:
+            scale = max(h,w)/cap_max_size
+            self.__resize = True
+        self.__size = (int(w/scale),int(h/scale))
+
         if not os.path.exists(self.__savePath):
             os.mkdir(self.__savePath)
 
     def capFrame(self):
         for i in range(self.__delay):
             self.__cap.grab()
-        return self.__cap.read()
+        _,img = self.__cap.read()
+        if self.__resize:
+            img = cv2.resize(img, self.__size)
+        return _, img
 
     def getLabel(self):
         return self.__label
