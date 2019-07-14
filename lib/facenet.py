@@ -32,6 +32,7 @@ from subprocess import Popen, PIPE
 import tensorflow as tf
 import numpy as np
 from scipy import misc
+import imageio
 from sklearn.model_selection import KFold
 from scipy import interpolate
 from tensorflow.python.training import training
@@ -248,7 +249,7 @@ def load_data(image_paths, do_random_crop, do_random_flip, image_size, do_prewhi
     images = np.zeros((nrof_samples, image_size, image_size, 3))
     for i in range(nrof_samples):
         if type(image_paths[0]) == type(""):   # if input is lists os string
-            img = misc.imread(image_paths[i])
+            img = imageio.imread(image_paths[i])
         else:
             img = image_paths[i]
         if img.ndim == 2:
